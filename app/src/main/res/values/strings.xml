@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">查笔画数</string>
+    <string name="button_send">Say something</string>
+    <string name="default_message">Text</string>
+    <string name="interact_message">You just clicked on the Button!</string>
+</resources>
