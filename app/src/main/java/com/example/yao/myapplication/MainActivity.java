@@ -15,10 +15,13 @@ import android.widget.Toast;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     private final static int TIMEOUT = 50000;
-    private static String url = "http://hanyu.baidu.com/s?wd=${word}&ptype=zici";
+    private static final String SEARCH_URL = "https://www.zdic.net/hans/{word}";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,12 +81,16 @@ public class MainActivity extends AppCompatActivity {
             String traditionalStrokeCount = null;
             try {
                 //获取指定网址的页面内容
-                Document document = Jsoup.connect(getRealUrl(simplified)).timeout(TIMEOUT).get();
+                Document document = getDocument(simplified);
                 if (document != null) {
-                    Element strokeCount = document.getElementById("stroke_count");
-                    simplifiedStrokeCount = strokeCount.getElementsByTag("span").get(0).text();
-                    Element traditionalElement = document.getElementById("traditional");
-                    traditional = traditionalElement.getElementsByTag("span").get(0).text();
+                    Elements strokeCount = document.getElementsByClass("z_ts3");
+                    simplifiedStrokeCount = strokeCount.get(0).parent().text().split(" ")[1];
+                    Elements elements = document.getElementsByClass("diczx3");
+                    if (null != elements && elements.size() > 0) {
+                        if ("strong".equals(elements.get(0).parent().tag().toString())) {
+                            traditional = elements.get(0).text();
+                        }
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -91,10 +98,10 @@ public class MainActivity extends AppCompatActivity {
 
             if (null != traditional) {
                 try {
-                    Document document = Jsoup.connect(getRealUrl(traditional)).timeout(TIMEOUT).get();
+                    Document document = getDocument(traditional);
                     if (document != null) {
-                        Element strokeCount = document.getElementById("stroke_count");
-                        traditionalStrokeCount = strokeCount.getElementsByTag("span").get(0).text();
+                        Elements strokeCount = document.getElementsByClass("z_ts3");
+                        traditionalStrokeCount = strokeCount.get(0).parent().text().split(" ")[1];
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -111,7 +118,11 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private Document getDocument(String simplified) throws IOException {
+        return Jsoup.connect(getRealUrl(simplified)).timeout(TIMEOUT).followRedirects(true).execute().parse();
+    }
+
     private String getRealUrl(String word) {
-        return url.replace("${word}", word);
+        return SEARCH_URL.replace("{word}", word);
     }
 }
